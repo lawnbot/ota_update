@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  OtaEvent currentEvent;
+  late OtaEvent currentEvent;
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (currentEvent == null) {
+    if (currentEvent.status.index == 0) {
       return Container();
     }
     return MaterialApp(

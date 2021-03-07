@@ -7,22 +7,25 @@ import 'package:flutter/services.dart';
 /// On Android it downloads the file (with progress reporting) and triggers app installation intent.
 /// On iOS it opens safari with specified ipa url. (not yet functioning)
 class OtaUpdate {
-  static const EventChannel _progressChannel = EventChannel('sk.fourq.ota_update');
-  Stream<OtaEvent> _progressStream;
+  static const EventChannel _progressChannel =
+      EventChannel('sk.fourq.ota_update');
+  late Stream<OtaEvent> _progressStream;
 
   /// Execute download and instalation of the plugin.
   /// Download progress and all success or error states are publish in stream as OtaEvent
   Stream<OtaEvent> execute(
     String url, {
     Map<String, String> headers = const <String, String>{},
-    String androidProviderAuthority,
-    String destinationFilename,
-    String sha256checksum,
+    String androidProviderAuthority = '',
+    String destinationFilename = '',
+    String sha256checksum = '',
   }) {
-    if (destinationFilename != null && destinationFilename.contains('/')) {
+    if (destinationFilename.isNotEmpty && destinationFilename.contains('/')) {
       throw OtaUpdateException('Invalid filename $destinationFilename');
     }
-    final StreamController<OtaEvent> controller = StreamController<OtaEvent>.broadcast();
+    final StreamController<OtaEvent> controller =
+        StreamController<OtaEvent>.broadcast();
+    // ignore: unnecessary_null_comparison
     if (_progressStream == null) {
       _progressChannel.receiveBroadcastStream(
         <dynamic, dynamic>{
@@ -40,7 +43,8 @@ class OtaUpdate {
         }
       }).onError((Object error) {
         if (error is PlatformException) {
-          controller.add(_toOtaEvent(<String>[error.code, error.message]));
+          final String errorMessage = error.message ?? '';
+          controller.add(_toOtaEvent(<String>[error.code, errorMessage]));
         }
       });
       _progressStream = controller.stream;
@@ -58,14 +62,17 @@ class OtaUpdate {
 ///Event describing current status
 class OtaEvent {
   /// Current status as enum value
-  OtaStatus status;
+  OtaStatus status = OtaStatus.NOTSTARTED;
 
   /// Additional status info e.g. percents downloaded or error message (can be null)
-  String value;
+  String value = '';
 }
 
 /// Enum values describing states
 enum OtaStatus {
+  /// NOTHING IS DONE YET
+  NOTSTARTED,
+
   /// FILE IS BEING DOWNLOADED
   DOWNLOADING,
 
@@ -98,11 +105,11 @@ class OtaUpdateException implements Exception {
   OtaUpdateException(this.message);
 
   /// ERROR MESSAGE
-  final String message;
+  String message = '';
 
   @override
   String toString() {
-    if (message == null) {
+    if (message.isEmpty) {
       return 'Exception';
     }
     return 'Exception: $message';
